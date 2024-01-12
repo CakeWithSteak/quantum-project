@@ -55,29 +55,35 @@ function fill(material, startX, startY, width, height) {
     }
 }
 
+function inside(x, y) {
+    return x >= 0 && y >= 0 && x < N && y < N;
+}
+
 function getTile(x, y) {
-    if (x < 0 || y < 0 || x >= N || y >= N) return Material.STONE;
+    if (!inside(x, y)) return Material.STONE;
     else return currentMap[x][y];
 }
 
 function swap(fromX, fromY, toX, toY) {
-    // const from = map[fromX][fromY];
-    // map[fromX][fromY] = map[toX][toY];
-    // map[toX][toY] = from;
+    copy(fromX, fromY);
     nextMap[fromX][fromY] = currentMap[toX][toY];
     nextMap[toX][toY] = currentMap[fromX][fromY];
 }
 
-function copy(x, y) {
-    nextMap[x][y] = currentMap[x][y];
+function copy(fromX, fromY) {
+    for (let x = fromX-1; x <= fromX+1; x++) {
+        for (let y = fromY-1; y <= fromY+1; y++) {
+            if (!inside(x, y)) continue;
+            nextMap[x][y] = currentMap[x][y];
+        }
+    }
 }
 
 function updateSand(x, y) {
-    // copy(x, y);
     if (getTile(x, y-1) == Material.AIR || getTile(x, y-1) == Material.WATER) {
         swap(x, y, x, y-1); 
-        // console.log(nextMap);
-    } else {
+    } 
+    else {
         const downLeft = getTile(x-1, y-1) == Material.AIR || getTile(x-1, y-1) == Material.WATER;
         const downRight = getTile(x+1, y-1) == Material.AIR || getTile(x+1, y-1) == Material.WATER;
 
@@ -127,10 +133,33 @@ function updateWater(x, y) {
     }
 }
 
+function updateIdentity(x, y) {
+    copy(x, y);
+}
+
+function copyEdges(sx, sy) {
+    let minX = sx-1;
+    let minY = sy-1;
+
+    let maxX = N-3 + sx + 1;
+    let maxY = N-3 + sy + 1;
+
+    for (let x = 0; x < N; x++) {
+        for (let y = 0; y < N; y++) {
+            if (x < minX || y < minY || x > maxX || y > maxY) {
+                nextMap[x][y] = currentMap[x][y];
+            }
+        }
+    }
+}
+
 let currentMap = createMap();
 let nextMap = null;
 
 fill(Material.STONE, 9, 9, 8, 2);
+// fill(Material.SAND, 9, 19, 1, 1);
+// fill(Material.STONE, 0, 0, 2, 2);
+
 
 let frame = 0;
 
@@ -142,8 +171,17 @@ function update() {
         currentMap[9][19] = (frame % 8 == 0) ? Material.WATER : Material.SAND;
     }
 
-    for (let y = 0; y < N; y++) {
-        for (let x = 0; x < N; x++) {
+    const chunks = N/3;
+
+    const substep = frame % 9;
+    let sx = substep % 3;
+    let sy = (substep - sx) / 3;
+
+    for (let chunkY = 0; chunkY < chunks; chunkY++) {
+        for (let chunkX = 0; chunkX < chunks; chunkX++) {
+            const x = chunkX * 3 + sx;
+            const y = chunkY * 3 + sy;
+
             switch (currentMap[x][y]) {
                 case Material.SAND:
                     updateSand(x, y);
@@ -151,9 +189,16 @@ function update() {
                 case Material.WATER:
                     updateWater(x, y);
                     break;
+                case Material.STONE:
+                case Material.AIR:
+                    updateIdentity(x, y);
+                    break;
             }
         }
     }
+
+    copyEdges(sx, sy);
+    
 
     currentMap = nextMap;
     renderMap(currentMap);
