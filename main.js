@@ -6,13 +6,15 @@ const N = 20;
 const Material = {
     AIR: 0,
     STONE: 1,
-    SAND: 2
+    SAND: 2,
+    WATER: 3
 }
 
 const COLOR = [
     [255, 255, 255],
     [50, 50, 50],
-    [252, 186, 3]
+    [252, 186, 3],
+    [3, 181, 252]
 ]
 
 function renderMap(map) {
@@ -45,9 +47,13 @@ function createMap() {
     return map;
 }
 
-
-
-const map = createMap();
+function fill(material, startX, startY, width, height) {
+    for (let x = startX; x < startX+width; x++) {
+        for (let y = startY; y < startY+height; y++) {
+            map[x][y] = material;
+        }
+    }
+}
 
 function getTile(x, y) {
     if (x < 0 || y < 0 || x >= N || y >= N) return Material.STONE;
@@ -61,28 +67,64 @@ function swap(fromX, fromY, toX, toY) {
 }
 
 function updateSand(x, y) {
-    if (getTile(x, y-1) == Material.AIR) {
+    if (getTile(x, y-1) == Material.AIR || getTile(x, y-1) == Material.WATER) {
         swap(x, y, x, y-1);
     } else {
-        const left = getTile(x-1, y-1) == Material.AIR;
-        const right = getTile(x+1, y-1) == Material.AIR;
+        const downLeft = getTile(x-1, y-1) == Material.AIR || getTile(x-1, y-1) == Material.WATER;
+        const downRight = getTile(x+1, y-1) == Material.AIR || getTile(x+1, y-1) == Material.WATER;
 
-        if (left && right) {
+        if (downLeft && downRight) {
             if (Math.random() < 0.5) swap(x, y, x-1, y-1);
             else swap(x, y, x+1, y-1);
-        } else if (left) {
+        } else if (downLeft) {
             swap(x, y, x-1, y-1);
-        } else if (right) {
+        } else if (downRight) {
             swap(x, y, x+1, y-1);
         }
     }
 }
 
+function updateWater(x, y) {
+    if (getTile(x, y-1) == Material.AIR) {
+        swap(x, y, x, y-1);
+    } else {
+        const downLeft = getTile(x-1, y-1) == Material.AIR;
+        const downRight = getTile(x+1, y-1) == Material.AIR;
+
+        if (downLeft && downRight) {
+            if (Math.random() < 0.5) swap(x, y, x-1, y-1);
+            else swap(x, y, x+1, y-1);
+        } else if (downLeft) {
+            swap(x, y, x-1, y-1);
+        } else if (downRight) {
+            swap(x, y, x+1, y-1);
+        } else {
+
+            const left = getTile(x-1, y) == Material.AIR;
+            const right = getTile(x+1, y) == Material.AIR;
+
+            if (left && right) {
+                if (Math.random() < 0.5) swap(x, y, x-1, y);
+                else swap(x, y, x+1, y);
+            } else if (left) {
+                swap(x, y, x-1, y);
+            } else if (right) {
+                swap(x, y, x+1, y);
+            }
+        }
+    }
+}
+
+const map = createMap();
+
+fill(Material.STONE, 9, 9, 8, 2);
+
 let frame = 0;
 
 function update() {
     if (frame % 4 == 0) {
-        map[9][19] = Material.SAND;
+        
+        map[9][19] = (frame % 8 == 0) ? Material.WATER : Material.SAND;
     }
 
     for (let y = 0; y < N; y++) {
@@ -90,6 +132,9 @@ function update() {
             switch (map[x][y]) {
                 case Material.SAND:
                     updateSand(x, y);
+                    break;
+                case Material.WATER:
+                    updateWater(x, y);
                     break;
             }
         }
@@ -99,4 +144,4 @@ function update() {
     frame++;
 }
 
-setInterval(update, 50);
+setInterval(update, 10);
