@@ -1,7 +1,7 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-const N = 20;
+const N = 21;
 
 const Material = {
     AIR: 0,
@@ -50,25 +50,33 @@ function createMap() {
 function fill(material, startX, startY, width, height) {
     for (let x = startX; x < startX+width; x++) {
         for (let y = startY; y < startY+height; y++) {
-            map[x][y] = material;
+            currentMap[x][y] = material;
         }
     }
 }
 
 function getTile(x, y) {
     if (x < 0 || y < 0 || x >= N || y >= N) return Material.STONE;
-    else return map[x][y];
+    else return currentMap[x][y];
 }
 
 function swap(fromX, fromY, toX, toY) {
-    const from = map[fromX][fromY];
-    map[fromX][fromY] = map[toX][toY];
-    map[toX][toY] = from;
+    // const from = map[fromX][fromY];
+    // map[fromX][fromY] = map[toX][toY];
+    // map[toX][toY] = from;
+    nextMap[fromX][fromY] = currentMap[toX][toY];
+    nextMap[toX][toY] = currentMap[fromX][fromY];
+}
+
+function copy(x, y) {
+    nextMap[x][y] = currentMap[x][y];
 }
 
 function updateSand(x, y) {
+    // copy(x, y);
     if (getTile(x, y-1) == Material.AIR || getTile(x, y-1) == Material.WATER) {
-        swap(x, y, x, y-1);
+        swap(x, y, x, y-1); 
+        // console.log(nextMap);
     } else {
         const downLeft = getTile(x-1, y-1) == Material.AIR || getTile(x-1, y-1) == Material.WATER;
         const downRight = getTile(x+1, y-1) == Material.AIR || getTile(x+1, y-1) == Material.WATER;
@@ -80,6 +88,8 @@ function updateSand(x, y) {
             swap(x, y, x-1, y-1);
         } else if (downRight) {
             swap(x, y, x+1, y-1);
+        } else {
+            copy(x, y);
         }
     }
 }
@@ -110,26 +120,31 @@ function updateWater(x, y) {
                 swap(x, y, x-1, y);
             } else if (right) {
                 swap(x, y, x+1, y);
+            } else {
+                copy(x, y);
             }
         }
     }
 }
 
-const map = createMap();
+let currentMap = createMap();
+let nextMap = null;
 
 fill(Material.STONE, 9, 9, 8, 2);
 
 let frame = 0;
 
 function update() {
+    nextMap = createMap();
+
     if (frame % 4 == 0) {
         
-        map[9][19] = (frame % 8 == 0) ? Material.WATER : Material.SAND;
+        currentMap[9][19] = (frame % 8 == 0) ? Material.WATER : Material.SAND;
     }
 
     for (let y = 0; y < N; y++) {
         for (let x = 0; x < N; x++) {
-            switch (map[x][y]) {
+            switch (currentMap[x][y]) {
                 case Material.SAND:
                     updateSand(x, y);
                     break;
@@ -140,7 +155,8 @@ function update() {
         }
     }
 
-    renderMap(map);
+    currentMap = nextMap;
+    renderMap(currentMap);
     frame++;
 }
 
