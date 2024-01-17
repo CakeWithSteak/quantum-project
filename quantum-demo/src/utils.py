@@ -21,7 +21,7 @@ def make_truth_table_update(bitmaps):
     return local_update
 
 
-def get_grid_index(grid_width, grid_height, x, y, loop):
+def grid_pos_to_index(grid_width, grid_height, x, y, loop):
     if loop:
         x %= grid_width
         y %= grid_height
@@ -29,6 +29,13 @@ def get_grid_index(grid_width, grid_height, x, y, loop):
         return -1
 
     return y*grid_width + x
+
+
+def index_to_grid_pos(grid_width, grid_height, index):
+    assert 0 <= index < grid_width * grid_height
+    x = index % grid_width
+    y = index // grid_width
+    return x, y
 
 
 def make_grid_partitions(grid_width, grid_height, partition_width, partition_height, shift_x, shift_y, loop=True):
@@ -53,7 +60,7 @@ def make_grid_partitions(grid_width, grid_height, partition_width, partition_hei
 
             for y in range(sy, sy+partition_height):
                 for x in range(sx, sx+partition_width):
-                    partition.append(get_grid_index(grid_width, grid_height, x, y, loop))
+                    partition.append(grid_pos_to_index(grid_width, grid_height, x, y, loop))
 
             partitions.append(partition)
 
@@ -63,3 +70,9 @@ def make_grid_partitions(grid_width, grid_height, partition_width, partition_hei
 def apply_global_update(circuit, partitions, local_update):
     for qubits in partitions:
         local_update(circuit, qubits)
+
+
+def init(circuit, bitmap):
+    for i in range(len(bitmap)):
+        if bitmap[i] == '1':
+            circuit.x(i)
