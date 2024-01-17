@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noita at home</title>
+    <style>
+        body {
+            background-color: rgb(19, 19, 19);
+            position: relative;
+            height: 100vh;
+        }
+
+        canvas {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            background-color: white;
+            image-rendering: pixelated;
+            transform: translate(-50%, -50%);
+            transform: scale(40);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width=21 height=21></canvas>
+    <script src="js/constant.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
