@@ -20,7 +20,7 @@ local_update = make_truth_table_update([
 partitions = [partitions_A, partitions_B, partitions_C, partitions_D]
 multiple_counts = []
 
-for total_steps in range(10):
+for total_steps in range(30):
     circuit = QuantumCircuit(N * N)
 
     init_binary(circuit,
@@ -29,8 +29,8 @@ for total_steps in range(10):
                 '0000'
                 '0000')
 
-    # circuit.h(1)
-    # circuit.cx(1, 0)
+    # circuit.h(0)
+    # circuit.h(15)
 
     for step in range(total_steps):
         apply_global_update(circuit, partitions[step % len(partitions)], local_update)
