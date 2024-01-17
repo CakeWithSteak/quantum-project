@@ -72,7 +72,7 @@ def apply_global_update(circuit, partitions, local_update):
         local_update(circuit, qubits)
 
 
-def init(circuit, bitmap):
+def init_binary(circuit, bitmap):
     for i in range(len(bitmap)):
         if bitmap[i] == '1':
             circuit.x(i)

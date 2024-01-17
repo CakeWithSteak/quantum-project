@@ -1,7 +1,7 @@
 from qiskit import QuantumCircuit
 
 from src.simulate import simulate
-from src.utils import make_grid_partitions, make_truth_table_update, apply_global_update, init
+from src.utils import make_grid_partitions, make_truth_table_update, apply_global_update, init_binary
 from src.visualize import visualize_grid, visualize_grid_animation
 
 N = 4
@@ -21,13 +21,13 @@ partitions = [partitions_A, partitions_B, partitions_C, partitions_D]
 multiple_counts = []
 
 for total_steps in range(10):
-    circuit = QuantumCircuit(N*N)
+    circuit = QuantumCircuit(N * N)
 
-    init(circuit,
-         '1001'
-         '0000'
-         '0000'
-         '0000')
+    init_binary(circuit,
+                '1001'
+                '0000'
+                '0000'
+                '0000')
 
     # circuit.h(1)
     # circuit.cx(1, 0)
