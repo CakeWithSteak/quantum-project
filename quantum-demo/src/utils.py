@@ -14,6 +14,7 @@ def make_truth_table_matrix(bitmaps):
 
 def make_truth_table_update(bitmaps):
     matrix = make_truth_table_matrix(bitmaps)
+    print(matrix)
 
     def local_update(circuit, qubits):
         circuit.unitary(matrix, qubits)
