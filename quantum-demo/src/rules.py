@@ -27,11 +27,11 @@ Rule
 
 class RuleData:
     def __init__(self):
-        # self.classic_outcome = None
-        # self.qubit_indices = []
         self.quantum_rules = dict()
 
-        self.qubit_mappings = dict()
+        # computed
+        self.qubit_mappings = None
+        self.unitary = None
 
     def add_rule(self, context, outcome):
         if context not in self.quantum_rules:
@@ -39,7 +39,7 @@ class RuleData:
 
         self.quantum_rules[context].append(outcome)
 
-    def apply_classic(self):
+    def compute_qubit_mappings(self):
         context = list(self.quantum_rules.keys())[0]
         classic_context = str_to_classic(context)
 
@@ -57,12 +57,43 @@ class RuleData:
                 to_indices.append(i)
 
         assert len(from_indices) == len(to_indices)
-        self.qubit_mappings = dict()
-        for i in range(len(to_indices)):
-            self.qubit_mappings[to_indices[i]] = from_indices[i]
+        self.qubit_mappings = []
+        for i in range(len(from_indices)):
+            self.qubit_mappings.append((from_indices[i], to_indices[i]))
+
+    def compute_raw_rules(self):
+        raw_rules = dict()
+
+        for (context, outcomes) in self.quantum_rules.items():
+            raw_context = ''.join([context[m[0]] for m in self.qubit_mappings])
+            raw_context_index = int(raw_context, 2)
+            raw_rules[raw_context_index] = []
+
+            for (coefficient, outcome) in outcomes:
+                raw_outcome = ''.join([outcome[m[1]] for m in self.qubit_mappings])
+                print(raw_outcome)
+                raw_outcome_index = int(raw_outcome, 2)
+                raw_rules[raw_context_index].append((coefficient, raw_outcome_index))
+
+        return raw_rules
+
+    def compute_unitary(self):
+        raw_rules = self.compute_raw_rules()
+        print(raw_rules)
+
+        n = 2 ** len(self.qubit_mappings)
+        self.unitary = np.zeros((n, n), dtype=complex)
+
+        for context_index in range(n):
+            if context_index in raw_rules:
+                for (coefficient, outcome_index) in raw_rules[context_index]:
+                    self.unitary[outcome_index][context_index] = coefficient
+            else:
+                self.unitary[context_index][context_index] = 1
 
     def apply(self):
-        self.apply_classic()
+        self.compute_qubit_mappings()
+        self.compute_unitary()
 
 
 
@@ -96,64 +127,58 @@ class RuleSet:
         for rule in self.rule_data.values():
             rule.apply()
 
-    # def get_rule(self, context):
-
     def get_qubit_mappings(self, context):
         if context in self.rule_data:
             return self.rule_data[context].qubit_mappings
 
-        return dict()
+        return None # identity
 
     def get_quantum_rule(self, context):
-        # return matrix on result qubits
-        pass
+        if context in self.rule_data:
+            return self.rule_data[context].unitary
 
-
-# class RuleData:
-#     def __init__(self):
-#         self.classic_outcome = None
-#         self.qubit_indices = []
-#         self.quantum_contexts = None
-#
-# qubit_indices = []
-# for i in range(len(context)):
-#     if classic_outcome[i] == 's':
-#         qubit_indices.append(i)
+        return None # identity
 
 
 
-
-# def get_classic_rule(context):
-#     classic_context = str_to_classic(context)
-#     if classic_context in classic_rules:
-#         return classic_rules[classic_context]
-#
-#     return classic_context
-
-# def get_quantum_rule(context)
 
 rule_set = RuleSet()
 
-rule_set.add_rule("0...", [(1, "...0")], True, False)
-rule_set.add_rule("1...", [(1, "...1")], True, False)
+# rule_set.add_rule("0...", [(1, "...0")], True, False)
+# rule_set.add_rule("1...", [(1, "...1")], True, False)
+#
+# rule_set.add_rule("##0.", [(1, "##.0")], True, True)
+# rule_set.add_rule("##1.", [(1, "##.1")], True, True)
+#
+# rule_set.add_rule("#.0.", [(1, "#0..")], True, True)
+# rule_set.add_rule("#.1.", [(1, "#1..")], True, True)
+#
+# rule_set.add_rule("#.0#", [(1 / np.sqrt(2), "#0.#"), (1 / np.sqrt(2), "#1.#")], True, False)
+# rule_set.add_rule("#.1#", [(1 / np.sqrt(2), "#0.#"), (-1 / np.sqrt(2), "#1.#")], True, False)
+#
+# rule_set.add_rule("1.1.", [(np.exp(1j * np.pi / 4), ".1.1")], True, False)
+# rule_set.add_rule("1.0.", [(1, ".0.1")], True, False)
+# rule_set.add_rule("0.1.", [(1, ".1.0")], True, False)
+# rule_set.add_rule("0.0.", [(1, ".0.0")], True, False)
 
-rule_set.add_rule("##0.", [(1, "##.0")], True, True)
-rule_set.add_rule("##1.", [(1, "##.1")], True, True)
 
-rule_set.add_rule("#.0.", [(1, "#0..")], True, True)
-rule_set.add_rule("#.1.", [(1, "#1..")], True, True)
+# testing rule
+# rule_set.add_rule("1.0.", [(1, "0.1.")], False, False)
 
-rule_set.add_rule("#.0#", [(1 / np.sqrt(2), "#0.#"), (1 / np.sqrt(2), "#1.#")], True, False)
-rule_set.add_rule("#.1#", [(1 / np.sqrt(2), "#0.#"), (-1 / np.sqrt(2), "#1.#")], True, False)
+rule_set.add_rule("1.1.", [(np.exp(1j * np.pi / 4), ".1.1")], False, False)
+rule_set.add_rule("1.0.", [(1, ".0.1")], False, False)
+rule_set.add_rule("0.1.", [(1, ".1.0")], False, False)
+rule_set.add_rule("0.0.", [(1, ".0.0")], False, False)
 
-rule_set.add_rule("1.1.", [(np.exp(1j * np.pi / 4), ".1.1")], True, False)
-rule_set.add_rule("1.0.", [(1, "0.1.")], True, False)
-rule_set.add_rule("0.1.", [(1, "1.0.")], True, False)
-rule_set.add_rule("0.0.", [(1, "0.0.")], True, False)
+# rule_set.add_rule("#.0#", [(1 / np.sqrt(2), "#0.#"), (1 / np.sqrt(2), "#1.#")], False, False)
+# rule_set.add_rule("#.1#", [(1 / np.sqrt(2), "#0.#"), (-1 / np.sqrt(2), "#1.#")], False, False)
 
 rule_set.apply()
 
-print(rule_set.rule_data["s..."].qubit_mappings)
+np.set_printoptions(precision=3)
+print(rule_set.rule_data["s.s."].unitary)
+
+# print(rule_set.rule_data["s..."].qubit_mappings)
 
 
 class QubitMapper:
@@ -201,16 +226,20 @@ class Simulation:
             qubit_mappings = rule_set.get_qubit_mappings(context)
 
             # no mapping (identity)
-            if len(qubit_mappings) == 0:
+            if qubit_mappings is None:
                 continue
+
+            qubit_mappings_dict = dict()
+            for (from_index, to_index) in qubit_mappings:
+                qubit_mappings_dict[to_index] = from_index
 
             old = [self.grid[i] for i in chunk]
 
-            for (to_index, from_index) in qubit_mappings.items():
+            for (to_index, from_index) in qubit_mappings_dict.items():
                 self.grid[chunk[to_index]] = old[from_index]
 
             for i in range(len(chunk)):
-                if i not in qubit_mappings and self.grid[chunk[i]] == 's':
+                if i not in qubit_mappings_dict and self.grid[chunk[i]] == 's':
                     self.grid[chunk[i]] = '.'
 
         self.iteration += 1
