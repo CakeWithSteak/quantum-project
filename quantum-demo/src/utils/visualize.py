@@ -77,3 +77,27 @@ def visualize_line_over_time(line_length, time_steps, multiple_counts):
 
     plt.imshow(grid)
     plt.show()
+
+
+def visualize_image_animation(images):
+    fig, ax = plt.subplots(figsize=(8, 8))
+    fig.canvas.manager.set_window_title('Visualization')
+    im = ax.imshow(images[0], origin='upper')
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    def frame(i):
+        im.set_array(images[i])
+        ax.set_title(f'{i}/{len(images)}')
+        return [im]
+
+    anim = animation.FuncAnimation(
+        fig,
+        frame,
+        frames=len(images),
+        interval=300
+    )
+
+    # anim.save("demo.gif", dpi=300, writer=PillowWriter(fps=10))
+
+    plt.show()

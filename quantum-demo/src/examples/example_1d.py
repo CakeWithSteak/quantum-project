@@ -41,8 +41,3 @@ for total_steps in range(T):
     multiple_counts.append(counts)
 
 visualize_line_over_time(N, T, multiple_counts)
-
-
-# add_rule(in, out, coeficient)
-
-
