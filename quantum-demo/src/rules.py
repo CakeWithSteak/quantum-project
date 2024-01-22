@@ -1,4 +1,5 @@
 import numpy as np
+from qiskit import QuantumCircuit
 
 from src.utils import grid_pos_to_index, make_grid_partitions
 
@@ -12,17 +13,6 @@ def char_to_classic(char):
 
 def str_to_classic(string):
     return ''.join([char_to_classic(c) for c in string])
-
-
-classic_rules = dict()
-
-
-'''
-classic_context ->
-Rule
- classic_outcome
- quantum_contexts -> quantum_outcomes
-'''
 
 
 class RuleData:
@@ -71,7 +61,6 @@ class RuleData:
 
             for (coefficient, outcome) in outcomes:
                 raw_outcome = ''.join([outcome[m[1]] for m in self.qubit_mappings])
-                print(raw_outcome)
                 raw_outcome_index = int(raw_outcome, 2)
                 raw_rules[raw_context_index].append((coefficient, raw_outcome_index))
 
@@ -79,7 +68,6 @@ class RuleData:
 
     def compute_unitary(self):
         raw_rules = self.compute_raw_rules()
-        print(raw_rules)
 
         n = 2 ** len(self.qubit_mappings)
         self.unitary = np.zeros((n, n), dtype=complex)
@@ -91,15 +79,13 @@ class RuleData:
             else:
                 self.unitary[context_index][context_index] = 1
 
+        # if identity ignore
+        if np.all(np.equal(self.unitary, np.eye(n))):
+            self.unitary = None
+
     def apply(self):
         self.compute_qubit_mappings()
         self.compute_unitary()
-
-
-
-
-
-
 
 
 class RuleSet:
@@ -131,69 +117,51 @@ class RuleSet:
         if context in self.rule_data:
             return self.rule_data[context].qubit_mappings
 
-        return None # identity
+        return None  # identity
 
-    def get_quantum_rule(self, context):
+    def get_unitary(self, context):
         if context in self.rule_data:
             return self.rule_data[context].unitary
 
-        return None # identity
-
-
+        return None  # identity
 
 
 rule_set = RuleSet()
 
-# rule_set.add_rule("0...", [(1, "...0")], True, False)
-# rule_set.add_rule("1...", [(1, "...1")], True, False)
-#
-# rule_set.add_rule("##0.", [(1, "##.0")], True, True)
-# rule_set.add_rule("##1.", [(1, "##.1")], True, True)
-#
-# rule_set.add_rule("#.0.", [(1, "#0..")], True, True)
-# rule_set.add_rule("#.1.", [(1, "#1..")], True, True)
-#
-# rule_set.add_rule("#.0#", [(1 / np.sqrt(2), "#0.#"), (1 / np.sqrt(2), "#1.#")], True, False)
-# rule_set.add_rule("#.1#", [(1 / np.sqrt(2), "#0.#"), (-1 / np.sqrt(2), "#1.#")], True, False)
-#
-# rule_set.add_rule("1.1.", [(np.exp(1j * np.pi / 4), ".1.1")], True, False)
-# rule_set.add_rule("1.0.", [(1, ".0.1")], True, False)
-# rule_set.add_rule("0.1.", [(1, ".1.0")], True, False)
-# rule_set.add_rule("0.0.", [(1, ".0.0")], True, False)
+rule_set.add_rule("0...", [(1, "...0")], True, False)
+rule_set.add_rule("1...", [(1, "...1")], True, False)
+
+rule_set.add_rule("##0.", [(1, "##.0")], True, True)
+rule_set.add_rule("##1.", [(1, "##.1")], True, True)
+
+rule_set.add_rule("#.0.", [(1, "#0..")], True, True)
+rule_set.add_rule("#.1.", [(1, "#1..")], True, True)
+
+rule_set.add_rule("#.0#", [(1 / np.sqrt(2), "#0.#"), (1 / np.sqrt(2), "#1.#")], True, False)
+rule_set.add_rule("#.1#", [(1 / np.sqrt(2), "#0.#"), (-1 / np.sqrt(2), "#1.#")], True, False)
+
+rule_set.add_rule("1.1.", [(np.exp(1j * np.pi / 4), ".1.1")], True, False)
+rule_set.add_rule("1.0.", [(1, ".0.1")], True, False)
+rule_set.add_rule("0.1.", [(1, ".1.0")], True, False)
+rule_set.add_rule("0.0.", [(1, ".0.0")], True, False)
 
 
 # testing rule
 # rule_set.add_rule("1.0.", [(1, "0.1.")], False, False)
 
-rule_set.add_rule("1.1.", [(np.exp(1j * np.pi / 4), ".1.1")], False, False)
-rule_set.add_rule("1.0.", [(1, ".0.1")], False, False)
-rule_set.add_rule("0.1.", [(1, ".1.0")], False, False)
-rule_set.add_rule("0.0.", [(1, ".0.0")], False, False)
+# rule_set.add_rule("1.1.", [(np.exp(1j * np.pi / 4), ".1.1")], False, False)
+# rule_set.add_rule("1.0.", [(1, ".0.1")], False, False)
+# rule_set.add_rule("0.1.", [(1, ".1.0")], False, False)
+# rule_set.add_rule("0.0.", [(1, ".0.0")], False, False)
 
 # rule_set.add_rule("#.0#", [(1 / np.sqrt(2), "#0.#"), (1 / np.sqrt(2), "#1.#")], False, False)
 # rule_set.add_rule("#.1#", [(1 / np.sqrt(2), "#0.#"), (-1 / np.sqrt(2), "#1.#")], False, False)
 
 rule_set.apply()
 
-np.set_printoptions(precision=3)
-print(rule_set.rule_data["s.s."].unitary)
-
+# np.set_printoptions(precision=3)
+# print(rule_set.rule_data["s.s."].unitary)
 # print(rule_set.rule_data["s..."].qubit_mappings)
-
-
-class QubitMapper:
-    def __init__(self):
-        self.mappings = dict()
-
-    def has(self, index):
-        return index in self.mappings
-
-    def get(self, index):
-        return self.mappings[index]
-
-    def allocate(self, index):
-        self.mappings[index] = len(self.mappings)
-        return self.get(index)
 
 
 class Simulation:
@@ -208,39 +176,61 @@ class Simulation:
 
         self.iteration = 0
 
-        self.qubit_mappings = dict()
+        self.tile_to_qubit = dict()
+
+        self.circuit = None
 
     def init(self, state):
-        qubit_index = 0
+        qubit_count = 0
 
         for i in range(self.width * self.height):
             self.grid[i] = char_to_classic(state[i])
             if self.grid[i] == 's':
-                self.qubit_mappings[i] = qubit_index
-                qubit_index += 1
+                self.tile_to_qubit[i] = qubit_count
+                qubit_count += 1
+
+        self.circuit = QuantumCircuit(qubit_count)
+
+    def apply_unitary(self, matrix, tiles):
+        qubits = [self.tile_to_qubit[i] for i in tiles]
+        self.circuit.unitary(matrix, qubits)
+
+    def apply_remap_qubits(self, tile_mappings):
+        old_mappings = dict(self.tile_to_qubit)
+        for from_tile, to_tile in tile_mappings:
+            del self.tile_to_qubit[from_tile]
+
+        for from_tile, to_tile in tile_mappings:
+            self.tile_to_qubit[to_tile] = old_mappings[from_tile]
+
+    def apply_remap_grid(self, tile_mappings):
+        old_mappings = [self.grid[from_tile] for (from_tile, to_tile) in tile_mappings]
+
+        for from_tile, to_tile in tile_mappings:
+            self.grid[from_tile] = '.'
+
+        for i in range(len(tile_mappings)):
+            from_tile, to_tile = tile_mappings[i]
+            self.grid[to_tile] = old_mappings[i]
+
+    def apply_remap(self, tile_mappings):
+        self.apply_remap_qubits(tile_mappings)
+        self.apply_remap_grid(tile_mappings)
 
     def step(self):
         partition = self.partitions[self.iteration % len(self.partitions)]
         for chunk in partition:
             context = ''.join(self.grid[i] for i in chunk)
+
+            tiles = [i for i in chunk if self.grid[i] == 's']
+            unitary = rule_set.get_unitary(context)
+            if unitary is not None:
+                self.apply_unitary(unitary, tiles)
+
             qubit_mappings = rule_set.get_qubit_mappings(context)
-
-            # no mapping (identity)
-            if qubit_mappings is None:
-                continue
-
-            qubit_mappings_dict = dict()
-            for (from_index, to_index) in qubit_mappings:
-                qubit_mappings_dict[to_index] = from_index
-
-            old = [self.grid[i] for i in chunk]
-
-            for (to_index, from_index) in qubit_mappings_dict.items():
-                self.grid[chunk[to_index]] = old[from_index]
-
-            for i in range(len(chunk)):
-                if i not in qubit_mappings_dict and self.grid[chunk[i]] == 's':
-                    self.grid[chunk[i]] = '.'
+            if qubit_mappings is not None:
+                tile_mappings = [(chunk[from_index], chunk[to_index]) for (from_index, to_index) in qubit_mappings]
+                self.apply_remap(tile_mappings)
 
         self.iteration += 1
 
@@ -252,19 +242,23 @@ class Simulation:
                 row += self.grid[index]
 
             print(row)
-        print("")
 
 
 sim = Simulation(4, 4)
-sim.init("0..#"
-         ".1.#"
+sim.init("11.#"
+         "...#"
          "...."
          "....")
 
 sim.print()
+print(sim.tile_to_qubit)
 
 for s in range(4):
     sim.step()
     sim.print()
+    print(sim.tile_to_qubit)
+    print("")
+
+print(sim.circuit)
 
 
