@@ -93,7 +93,7 @@ class SignalSimulation:
         self.probabilities = np.zeros(self.qubit_count)
         for (bits, count) in counts.items():
             for i in range(len(bits)):
-                if bits[i] == '1':
+                if bits[-1-i] == '1':
                     self.probabilities[i] += count / 1000
 
         return self.probabilities
