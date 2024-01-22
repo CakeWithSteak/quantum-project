@@ -1,10 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
-from matplotlib.animation import PillowWriter
 from matplotlib.ticker import MaxNLocator
 
-from src.utils import index_to_grid_pos
+from src.utils.utils import index_to_grid_pos
 
 
 def counts_to_grid(grid_width, grid_height, counts):
@@ -23,6 +22,26 @@ def visualize_grid(grid_width, grid_height, counts):
     grid = counts_to_grid(grid_width, grid_height, counts)
     plt.imshow(grid.T)
     plt.show()
+
+
+def counts_to_line(line_length, counts):
+    line = np.zeros(line_length)
+
+    for qubits, count in counts.items():
+        for i in range(len(qubits)):
+            if qubits[-1 - i] == '1':
+                line[i] += count
+
+    return line
+
+
+def counts_to_line_over_time(line_length, time_steps, multiple_counts):
+    grid = np.empty((time_steps, line_length))
+
+    for t in range(time_steps):
+        grid[t] = counts_to_line(line_length, multiple_counts[t])
+
+    return grid
 
 
 def visualize_grid_animation(grid_width, grid_height, multiple_counts):
@@ -50,3 +69,11 @@ def visualize_grid_animation(grid_width, grid_height, multiple_counts):
 
     plt.show()
 
+
+def visualize_line_over_time(line_length, time_steps, multiple_counts):
+    grid = counts_to_line_over_time(line_length, time_steps, multiple_counts)
+    # column_pairs = [(i, i+1) for i in range(0, line_length, 2)]
+    # result_array = np.sum(grid[:, column_pairs], axis=2)
+
+    plt.imshow(grid)
+    plt.show()
