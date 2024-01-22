@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
+from matplotlib.animation import PillowWriter
 from matplotlib.ticker import MaxNLocator
 
 from src.utils.utils import index_to_grid_pos
@@ -79,16 +80,30 @@ def visualize_line_over_time(line_length, time_steps, multiple_counts):
     plt.show()
 
 
-def visualize_image_animation(images):
-    fig, ax = plt.subplots(figsize=(8, 8))
+def visualize_image_animation(images, shots, display_histogram):
+    if display_histogram:
+        fig, (image_ax, hist_ax) = plt.subplots(figsize=(8, 8), nrows=2, height_ratios=[3, 1])
+    else:
+        fig, image_ax = plt.subplots(figsize=(8, 8))
+
     fig.canvas.manager.set_window_title('Visualization')
-    im = ax.imshow(images[0], origin='upper', extent=(0, images[0].shape[0], 0, images[0].shape[1]))
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    im = image_ax.imshow(images[0], origin='upper', extent=(0, images[0].shape[0], 0, images[0].shape[1]))
+    image_ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    image_ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    if display_histogram:
+        hist_ax.set_title("Possible signal states")
+        hist_ax.set_ylabel("probability")
 
     def frame(i):
         im.set_array(images[i])
-        ax.set_title(f'{i}/{len(images)}')
+        image_ax.set_title(f'{i}/{len(images)}')
+        if display_histogram:
+            x, y = zip(*shots[i])
+            hist_ax.clear()
+            hist_ax.bar(x, y, width=0.2)
+            hist_ax.set_ylim(0, 1.05)
+
         return [im]
 
     anim = animation.FuncAnimation(
@@ -98,6 +113,6 @@ def visualize_image_animation(images):
         interval=200
     )
 
-    # anim.save("demo.gif", dpi=300, writer=PillowWriter(fps=10))
+    anim.save("demo.gif", dpi=300, writer=PillowWriter(fps=10))
 
     plt.show()
