@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import pyplot as plt
 from qiskit import QuantumCircuit
 
 from src.utils.simulate import simulate
@@ -22,6 +21,7 @@ class SignalSimulation:
         self.tile_to_qubit = dict()
 
         self.circuit = None
+        self.probabilities = None
 
     def init(self, state):
         self.qubit_count = 0
@@ -82,6 +82,22 @@ class SignalSimulation:
 
         self.iteration += 1
 
+    def simulate(self, steps):
+        for i in range(steps):
+            self.step()
+
+        self.circuit.measure_all()
+
+        counts = simulate(self.circuit)
+
+        self.probabilities = np.zeros(self.qubit_count)
+        for (bits, count) in counts.items():
+            for i in range(len(bits)):
+                if bits[i] == '1':
+                    self.probabilities[i] += count / 1000
+
+        return self.probabilities
+
     def print(self):
         for y in range(self.height):
             row = ""
@@ -89,22 +105,7 @@ class SignalSimulation:
                 index = grid_pos_to_index(self.width, self.height, x, y)
                 row += self.grid[index]
 
-    def simulate(self):
-        self.circuit.measure_all()
-
-        counts = simulate(self.circuit)
-
-        probabilities = np.zeros(self.qubit_count)
-        for (bits, count) in counts.items():
-            for i in range(len(bits)):
-                if bits[i] == '1':
-                    probabilities[i] += count / 1000
-
-        return probabilities
-
-    def show(self):
-        probabilities = self.simulate()
-
+    def image(self):
         img = np.zeros((self.height, self.width, 3))
         for x in range(self.width):
             for y in range(self.height):
@@ -113,8 +114,7 @@ class SignalSimulation:
                     case '.': img[y, x] = [1, 1, 0.98]
                     case '#': img[y, x] = [0, 0, 0]
                     case 's':
-                        t = probabilities[self.tile_to_qubit[index]]
+                        t = self.probabilities[self.tile_to_qubit[index]]
                         img[y, x] = lerp_color([0.84, 0.13, 0.27], [0.09, 0.75, 0.73], t)
 
-        plt.imshow(img, interpolation='nearest')
-        plt.show()
+        return img

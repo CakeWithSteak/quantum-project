@@ -2,6 +2,7 @@ import numpy as np
 
 from src.signal.rules import RuleSet
 from src.signal.signal import SignalSimulation
+from src.utils.visualize import visualize_image_animation
 
 rule_set = RuleSet()
 
@@ -28,23 +29,22 @@ rule_set.apply()
 # print(rule_set.rule_data["s.s."].unitary)
 # print(rule_set.rule_data["s..."].qubit_mappings)
 
-sim = SignalSimulation(4, 4, rule_set)
-sim.init("1#.#"
-         "#..#"
-         "...."
-         "....")
+N = 4
+T = 10
 
-sim.print()
-# print(sim.tile_to_qubit)
+images = []
 
-for s in range(1):
-    sim.step()
-    sim.print()
-    # print(sim.tile_to_qubit)
-    # print("")
+for total_steps in range(T):
+    sim = SignalSimulation(N, N, rule_set)
+    sim.init("1#.#"
+             "#..#"
+             "...."
+             "....")
 
-# print(sim.circuit)
+    sim.simulate(total_steps)
+    images.append(sim.image())
 
-sim.show()
+
+visualize_image_animation(images)
 
 
