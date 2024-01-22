@@ -32,6 +32,7 @@ rule_set.apply()
 
 def simulate_signal(width, height, time_steps, initial_state):
     images = []
+    shots = []
 
     for current_steps in range(time_steps):
         simulation = SignalSimulation(width, height, rule_set)
@@ -39,8 +40,9 @@ def simulate_signal(width, height, time_steps, initial_state):
 
         simulation.simulate(current_steps)
         images.append(simulation.image())
+        shots.append(simulation.shots)
 
-    visualize_image_animation(images)
+    visualize_image_animation(images, shots, display_histogram=True)
 
 
 # empty

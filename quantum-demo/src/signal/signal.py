@@ -2,7 +2,7 @@ import numpy as np
 from qiskit import QuantumCircuit
 
 from src.utils.simulate import simulate
-from src.utils.utils import make_grid_partitions, char_to_classic, grid_pos_to_index, lerp_color
+from src.utils.utils import make_grid_partitions, char_to_classic, grid_pos_to_index, lerp_color, niceify_shots
 
 
 class SignalSimulation:
@@ -22,6 +22,7 @@ class SignalSimulation:
 
         self.circuit = None
         self.probabilities = None
+        self.shots = []
 
     def init(self, state):
         self.qubit_count = 0
@@ -91,6 +92,7 @@ class SignalSimulation:
         counts = simulate(self.circuit)
 
         self.probabilities = np.zeros(self.qubit_count)
+        self.shots = niceify_shots(counts)
         for (bits, count) in counts.items():
             for i in range(len(bits)):
                 if bits[-1-i] == '1':
