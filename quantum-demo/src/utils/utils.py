@@ -21,7 +21,7 @@ def make_truth_table_update(bitmaps):
     return local_update
 
 
-def grid_pos_to_index(grid_width, grid_height, x, y, loop):
+def grid_pos_to_index(grid_width, grid_height, x, y, loop=False):
     if loop:
         x %= grid_width
         y %= grid_height
@@ -76,3 +76,24 @@ def init_binary(circuit, bitmap):
     for i in range(len(bitmap)):
         if bitmap[i] == '1':
             circuit.x(i)
+
+
+def lerp(from_number, to_number, t):
+    return from_number + (to_number-from_number)*t
+
+
+def lerp_color(from_color, to_color, t):
+    return [lerp(from_color[0], to_color[0], t),
+            lerp(from_color[1], to_color[1], t),
+            lerp(from_color[2], to_color[2], t)]
+
+
+def char_to_classic(char):
+    match char:
+        case '0': return 's'
+        case '1': return 's'
+        case _: return char
+
+
+def str_to_classic(string):
+    return ''.join([char_to_classic(c) for c in string])
