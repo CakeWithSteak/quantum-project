@@ -1,7 +1,18 @@
 import numpy as np
-from qiskit import QuantumCircuit
+from matplotlib import pyplot as plt
+from qiskit import QuantumCircuit, Aer, execute
 
 from src.utils import grid_pos_to_index, make_grid_partitions
+
+
+def lerp(from_number, to_number, t):
+    return from_number + (to_number-from_number)*t
+
+
+def lerp_color(from_color, to_color, t):
+    return [lerp(from_color[0], to_color[0], t),
+            lerp(from_color[1], to_color[1], t),
+            lerp(from_color[2], to_color[2], t)]
 
 
 def char_to_classic(char):
@@ -176,20 +187,26 @@ class Simulation:
 
         self.iteration = 0
 
+        self.qubit_count = 0
         self.tile_to_qubit = dict()
 
         self.circuit = None
 
     def init(self, state):
-        qubit_count = 0
+        self.qubit_count = 0
 
         for i in range(self.width * self.height):
             self.grid[i] = char_to_classic(state[i])
             if self.grid[i] == 's':
-                self.tile_to_qubit[i] = qubit_count
-                qubit_count += 1
+                self.tile_to_qubit[i] = self.qubit_count
+                self.qubit_count += 1
 
-        self.circuit = QuantumCircuit(qubit_count)
+        self.circuit = QuantumCircuit(self.qubit_count)
+
+        for i in range(self.width * self.height):
+            if self.grid[i] == 's':
+                if state[i] == '1':
+                    self.circuit.x(self.tile_to_qubit[i])
 
     def apply_unitary(self, matrix, tiles):
         qubits = [self.tile_to_qubit[i] for i in tiles]
@@ -241,24 +258,57 @@ class Simulation:
                 index = grid_pos_to_index(self.width, self.height, x, y)
                 row += self.grid[index]
 
-            print(row)
+    def simulate(self):
+        self.circuit.measure_all()
+
+        simulator = Aer.get_backend('qasm_simulator')
+        job = execute(self.circuit, simulator, shots=1000)
+        result = job.result()
+        counts = result.get_counts(self.circuit)
+
+        probabilities = np.zeros(self.qubit_count)
+        for (bits, count) in counts.items():
+            for i in range(len(bits)):
+                if bits[i] == '1':
+                    probabilities[i] += count / 1000
+
+        return probabilities
+
+    def show(self):
+        probabilities = self.simulate()
+
+        img = np.zeros((self.height, self.width, 3))
+        for x in range(self.width):
+            for y in range(self.height):
+                index = grid_pos_to_index(self.width, self.height, x, y)
+                match self.grid[index]:
+                    case '.': img[y, x] = [1, 1, 0.98]
+                    case '#': img[y, x] = [0, 0, 0]
+                    case 's':
+                        t = probabilities[self.tile_to_qubit[index]]
+                        img[y, x] = lerp_color([0.84, 0.13, 0.27], [0.09, 0.75, 0.73], t)
+
+        plt.imshow(img, interpolation='nearest')
+        plt.show()
 
 
 sim = Simulation(4, 4)
-sim.init("11.#"
-         "...#"
+sim.init("1#.#"
+         "#..#"
          "...."
          "....")
 
 sim.print()
-print(sim.tile_to_qubit)
+# print(sim.tile_to_qubit)
 
-for s in range(4):
+for s in range(1):
     sim.step()
     sim.print()
-    print(sim.tile_to_qubit)
-    print("")
+    # print(sim.tile_to_qubit)
+    # print("")
 
-print(sim.circuit)
+# print(sim.circuit)
+
+sim.show()
 
 
