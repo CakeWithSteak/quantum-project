@@ -97,3 +97,18 @@ def char_to_classic(char):
 
 def str_to_classic(string):
     return ''.join([char_to_classic(c) for c in string])
+
+
+# Given a shots dict from Qiskit, returns a sorted list of pairs including probability zero items
+def niceify_shots(shots):
+    res = []
+    total_shots = sum(shots.values())
+    num_bits = len(list(shots.keys())[0])
+    for i in range(2 ** num_bits):
+        bit_str = format(i, f"0{num_bits}b")
+        if bit_str in shots:
+            res.append((bit_str, shots[bit_str] / total_shots))
+        else:
+            res.append((bit_str, 0))
+
+    return res
