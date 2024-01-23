@@ -120,7 +120,7 @@ def visualize_image_animation(images, shots, *, trails=None, display_histogram):
         interval=200
     )
 
-    anim.save("demo.gif", dpi=300, writer=PillowWriter(fps=10))
+    anim.save("demo.gif", writer=PillowWriter(fps=10))
 
     plt.show()
 
