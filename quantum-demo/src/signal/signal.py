@@ -84,13 +84,13 @@ class SignalSimulation:
 
         self.iteration += 1
 
-    def simulate(self, steps):
+    def simulate(self, steps, use_real=False):
         for i in range(steps):
             self.step()
 
         self.circuit.measure_all()
 
-        counts = simulate(self.circuit)
+        counts = simulate(self.circuit, use_real=use_real)
 
         self.probabilities = np.zeros(self.qubit_count)
         self.shots = niceify_shots(counts)
