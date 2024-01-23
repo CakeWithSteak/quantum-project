@@ -2,7 +2,8 @@ import numpy as np
 from qiskit import QuantumCircuit
 
 from src.utils.simulate import simulate
-from src.utils.utils import make_grid_partitions, char_to_classic, grid_pos_to_index, lerp_color, niceify_shots
+from src.utils.utils import make_grid_partitions, char_to_classic, grid_pos_to_index, niceify_shots
+from src.utils.visualize import signal_color
 
 
 class SignalSimulation:
@@ -107,6 +108,8 @@ class SignalSimulation:
                 index = grid_pos_to_index(self.width, self.height, x, y)
                 row += self.grid[index]
 
+
+    # Returns an image of the current state, without trails
     def image(self):
         img = np.zeros((self.height, self.width, 3))
         for x in range(self.width):
@@ -117,6 +120,19 @@ class SignalSimulation:
                     case '#': img[y, x] = [0, 0, 0]
                     case 's':
                         t = self.probabilities[self.tile_to_qubit[index]]
-                        img[y, x] = lerp_color([0.84, 0.13, 0.27], [0.09, 0.75, 0.73], t)
+                        img[y, x] = signal_color(t)
 
         return img
+
+    # Returns an array of triples of x and y coordinates and probability of signals
+    def signals(self):
+        res = []
+        for x in range(self.width):
+            for y in range(self.height):
+                index = grid_pos_to_index(self.width, self.height, x, y)
+                match self.grid[index]:
+                    case 's':
+                        t = self.probabilities[self.tile_to_qubit[index]]
+                        res.append((x, y, t))
+
+        return res

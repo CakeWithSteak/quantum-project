@@ -32,6 +32,7 @@ rule_set.apply()
 
 def simulate_signal(width, height, time_steps, initial_state):
     images = []
+    trails = []
     shots = []
 
     for current_steps in range(time_steps):
@@ -40,9 +41,10 @@ def simulate_signal(width, height, time_steps, initial_state):
 
         simulation.simulate(current_steps)
         images.append(simulation.image())
+        trails.append(simulation.signals())
         shots.append(simulation.shots)
 
-    visualize_image_animation(images, shots, display_histogram=True)
+    visualize_image_animation(images, shots, trails=trails, display_histogram=True)
 
 
 # empty
