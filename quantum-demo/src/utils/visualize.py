@@ -3,8 +3,9 @@ import numpy as np
 from matplotlib import animation
 from matplotlib.animation import PillowWriter
 from matplotlib.ticker import MaxNLocator
+from enum import Enum
 
-from src.utils.utils import index_to_grid_pos
+from src.utils.utils import index_to_grid_pos, lerp_color
 
 
 def counts_to_grid(grid_width, grid_height, counts):
@@ -80,11 +81,17 @@ def visualize_line_over_time(line_length, time_steps, multiple_counts):
     plt.show()
 
 
-def visualize_image_animation(images, shots, display_histogram):
+def visualize_image_animation(images, shots, *, trails=None, display_histogram):
     if display_histogram:
         fig, (image_ax, hist_ax) = plt.subplots(figsize=(8, 8), nrows=2, height_ratios=[3, 1])
     else:
         fig, image_ax = plt.subplots(figsize=(8, 8))
+
+    if trails is not None:
+        for i, image in enumerate(images):
+            for j in range(i):
+                for x, y, t in trails[j]:
+                    image[y, x] = lerp_color([1, 1, 0.98], signal_color(t), 1 - 0.8 * ((i - j) / len(images)))
 
     fig.canvas.manager.set_window_title('Visualization')
     im = image_ax.imshow(images[0], origin='upper', extent=(0, images[0].shape[0], 0, images[0].shape[1]))
@@ -116,3 +123,7 @@ def visualize_image_animation(images, shots, display_histogram):
     anim.save("demo.gif", dpi=300, writer=PillowWriter(fps=10))
 
     plt.show()
+
+
+def signal_color(t):
+    return lerp_color([0.84, 0.13, 0.27], [0.09, 0.75, 0.73], t)
