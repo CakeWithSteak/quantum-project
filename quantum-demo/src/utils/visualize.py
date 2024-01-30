@@ -126,4 +126,8 @@ def visualize_image_animation(images, shots, *, trails=None, display_histogram):
 
 
 def signal_color(t):
-    return lerp_color([0.84, 0.13, 0.27], [0.09, 0.75, 0.73], t)
+    colors = np.array([[255, 93, 0], [162, 255, 84], [0, 137, 255]]) / 255
+    if t < 0.5:
+        return lerp_color(colors[0], colors[1], t*2)
+    else:
+        return lerp_color(colors[1], colors[2], (t-0.5) * 2)
